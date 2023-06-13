@@ -32,8 +32,11 @@ for col in categorical_columns:
 #print(train_data.describe())
 
 # Extract the input features and target variable
-X_train = train_data.drop('IS_HCP', axis=1)  # Assuming 'IS_HCP' is the column name for the target variable
-y_train = train_data['IS_HCP']
+X_train_hcp = train_data.drop('IS_HCP', axis=1)  # Assuming 'IS_HCP' is the column name for the target variable
+y_train_hcp = train_data['IS_HCP']
+
+X_train_taxonomy = train_data.drop('TAXONOMY', axis=1)  # Assuming 'IS_HCP' is the column name for the target variable
+y_train_taxonomy = train_data['TAXONOMY']
 
 # Load the testing data from CSV
 test_data = pd.read_csv('Doceree-HCP-Test.csv',encoding = 'latin-1')
@@ -54,45 +57,64 @@ for col in categorical_columns:
 
 # Extract the input features and target variable
 #print(test_data.head())
-X_test = test_data.drop('IS_HCP', axis=1)  # Assuming 'IS_HCP' is the column name for the target variable
-y_test = test_data['IS_HCP']
+X_test_hcp = test_data.drop('IS_HCP', axis=1)  # Assuming 'IS_HCP' is the column name for the target variable
+y_test_hcp = test_data['IS_HCP']
 
-#model = LogisticRegression()
-#model = HistGradientBoostingClassifier()
-#model = DecisionTreeClassifier()
-#model = RandomForestClassifier()
-#model = SVC()
-#model = GaussianNB()
+X_test_taxonomy = test_data.drop('TAXONOMY', axis=1)  # Assuming 'IS_HCP' is the column name for the target variable
+y_test_taxonomy = test_data['TAXONOMY']
+
+#model_hcp = LogisticRegression()
+#model_hcp = HistGradientBoostingClassifier()
+#model_hcp = DecisionTreeClassifier()
+#model_hcp = RandomForestClassifier()
+#model_hcp = SVC()
+#model_hcp = GaussianNB()
 #Accuracy for the MultinomialNB algorithm is 0.37053883834849544
-#model = MultinomialNB()
-#model = BernoulliNB()
+#model_hcp = MultinomialNB()
+#model_hcp = BernoulliNB()
 
 
 #Accuracy for the KNeighborsClassifier algorithm 
 # is 0.8931070678796361 with neighbors 4
-model = KNeighborsClassifier(n_neighbors=4)
+max_accuracy = 0
+index = 0
+for i in range(1000):
+    model_hcp = KNeighborsClassifier(n_neighbors=i+1)
+    model_taxonomy = KNeighborsClassifier(n_neighbors=i+1)
 
-X_test = X_test.fillna(-1)
-y_test = y_test.fillna(-1)
+    X_test_hcp = X_test_hcp.fillna(-1)
+    y_test_hcp = y_test_hcp.fillna(-1)
+
+    X_test_taxonomy = X_test_taxonomy.fillna(-1)
+    y_test_taxonomy = y_test_taxonomy.fillna(-1)
 
 
-X_train = X_train.fillna(-1)
-y_train = y_train.fillna(-1)
+    X_train_hcp = X_train_hcp.fillna(-1)
+    y_train_hcp = y_train_hcp.fillna(-1)
+
+    X_train_taxonomy = X_train_taxonomy.fillna(-1)
+    y_train_taxonomy = y_train_taxonomy.fillna(-1)
 
 # Train the model on the training data
-model.fit(X_train, y_train)
+    model_hcp.fit(X_train_hcp, y_train_hcp)
 
 # Make predictions on the test data
-y_pred = model.predict(X_test)
+    y_pred_hcp = model_hcp.predict(X_test_hcp)
 
 # Calculate the accuracy of the model
-accuracy = accuracy_score(y_test, y_pred)
-print(f'Accuracy: {accuracy}')
+    accuracy = accuracy_score(y_test_hcp, y_pred_hcp)
+    print(f'Accuracy: {accuracy}')
 
-result = test_data
-result = result.filter(['ID','TAXONOMY','IS_HCP'])
+    if(accuracy >= max_accuracy):
+        max_accuracy = accuracy
+        index = i
+
+    result = test_data
+    result = result.filter(['ID','TAXONOMY','IS_HCP'])
 
 
-result['IS_HCP'] = y_pred
-result = result.filter(['ID','TAXONOMY','IS_HCP'])
+    result['IS_HCP'] = y_pred_hcp
+    result = result.filter(['ID','TAXONOMY','IS_HCP'])
+print(f'Max Accuracy: {max_accuracy}')
+print(f'Index: {index}')
 result.to_csv('output.csv')
